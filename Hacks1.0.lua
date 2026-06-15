@@ -1,10 +1,8 @@
 local player = game.Players.LocalPlayer
 local enabledFling = false
 local flying = false
-
+local power = 25000
 local flySpeed = 100
-local jumpPower = 150
-local flingPower = 25000
 
 local bodyVelocity = nil
 local bodyGyro = nil
@@ -22,7 +20,7 @@ local function createFling()
     local thrust = Instance.new("BodyThrust")
     thrust.Name = "FlingThrust"
     thrust.Parent = root
-    thrust.Force = Vector3.new(flingPower, flingPower * 0.6, flingPower)
+    thrust.Force = Vector3.new(power, power * 0.6, power)
     thrust.Location = root.Position
 end
 
@@ -61,25 +59,24 @@ local function startFly()
             local cam = workspace.CurrentCamera
             local moveDirection = Vector3.new(0, 0, 0)
             
-            local uis = game:GetService("UserInputService")
-            if uis:IsKeyDown(Enum.KeyCode.W) then moveDirection = moveDirection + cam.CFrame.LookVector end
-            if uis:IsKeyDown(Enum.KeyCode.S) then moveDirection = moveDirection - cam.CFrame.LookVector end
-            if uis:IsKeyDown(Enum.KeyCode.A) then moveDirection = moveDirection - cam.CFrame.RightVector end
-            if uis:IsKeyDown(Enum.KeyCode.D) then moveDirection = moveDirection + cam.CFrame.RightVector end
-            if uis:IsKeyDown(Enum.KeyCode.Space) then moveDirection = moveDirection + Vector3.new(0, 1, 0) end
-            if uis:IsKeyDown(Enum.KeyCode.LeftControl) then moveDirection = moveDirection - Vector3.new(0, 1, 0) end
+            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.W) then moveDirection = moveDirection + cam.CFrame.LookVector end
+            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.S) then moveDirection = moveDirection - cam.CFrame.LookVector end
+            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.A) then moveDirection = moveDirection - cam.CFrame.RightVector end
+            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.D) then moveDirection = moveDirection + cam.CFrame.RightVector end
+            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.Space) then moveDirection = moveDirection + Vector3.new(0, 1, 0) end
+            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.LeftControl) then moveDirection = moveDirection - Vector3.new(0, 1, 0) end
             
             bodyVelocity.Velocity = moveDirection.Unit * flySpeed
             bodyGyro.CFrame = cam.CFrame
-            game:GetService("RunService").Heartbeat:Wait()
+            wait()
         end
     end)
 end
 
 local function stopFly()
     flying = false
-    if bodyVelocity then bodyVelocity:Destroy() bodyVelocity = nil end
-    if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
+    if bodyVelocity then bodyVelocity:Destroy() end
+    if bodyGyro then bodyGyro:Destroy() end
     
     local character = player.Character
     if character and character:FindFirstChild("Humanoid") then
@@ -87,24 +84,11 @@ local function stopFly()
     end
 end
 
-local function superJump()
-    local character = player.Character
-    if not character then return end
-    local humanoid = character:FindFirstChild("Humanoid")
-    local root = character:FindFirstChild("HumanoidRootPart")
-    if humanoid and root then
-        humanoid.JumpPower = jumpPower
-        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-    end
-end
-
-local UIS = game:GetService("UserInputService")
-
-UIS.InputBegan:Connect(function(input, gp)
+-- ====================== ТОГГЛЫ ======================
+game:GetService("UserInputService").InputBegan:Connect(function(input, gp)
     if gp then return end
-    local key = input.KeyCode
     
-    if key == Enum.KeyCode.F then           -- F = Fling
+    if input.KeyCode == Enum.KeyCode.F then        -- F = Toggle Fling
         enabledFling = not enabledFling
         if enabledFling then
             createFling()
@@ -114,7 +98,7 @@ UIS.InputBegan:Connect(function(input, gp)
             print("Touch Fling ВЫКЛ")
         end
         
-    elseif key == Enum.KeyCode.G then       -- G = Fly
+    elseif input.KeyCode == Enum.KeyCode.G then    -- G = Toggle Fly
         if flying then
             stopFly()
             print("Полёт ВЫКЛ")
@@ -122,28 +106,16 @@ UIS.InputBegan:Connect(function(input, gp)
             startFly()
             print("Полёт ВКЛ")
         end
-        
-    elseif key == Enum.KeyCode.LeftShift then -- Shift = Супер прыжок
-        superJump()
-        
-    elseif key == Enum.KeyCode.Equals then  -- + = Увеличить скорость полёта
-        flySpeed = flySpeed + 20
-        print("Скорость полёта: " .. flySpeed)
-        
-    elseif key == Enum.KeyCode.Minus then   -- - = Уменьшить скорость полёта
-        flySpeed = math.max(20, flySpeed - 20)
-        print("Скорость полёта: " .. flySpeed)
     end
 end)
 
+-- Автообновление при респавне
 player.CharacterAdded:Connect(function()
     wait(1.5)
     if enabledFling then createFling() end
     if flying then startFly() end
 end)
 
-print("Скрипт загружен")
+print("🎮 Touch Fling + Fly загружен!")
 print("   F — Вкл/Выкл Fling")
 print("   G — Вкл/Выкл Полёт")
-print("   Shift — Супер прыжок")
-print("   + / - — Изменить скорость полёта")
